@@ -1,23 +1,56 @@
-//document.body.style.backgroundColor = "red";
-
-var a_arr = document.querySelectorAll('a');
-for(var i = 0; i < a_arr.length; i++){
-	a_arr[i].style.backgroundColor = "red";	
-}
-
-chrome.extension.sendMessage({msg: 'ANOTHER', data: a_arr.length});
-
 function call_func(params){
+	if (0) {
+		var foo = function(el) {
+          if (el.tagName == "IMG") {
+            var src = el.getAttribute("data-original");
+            if (src != null) {
+              console.log("got image: " + src);
+            }// else {
+            //  src = el.getAttribute("src");
+            //  if (src != null) {
+             //   console.log("got image: " + src);
+            //  }
+           // }     
+          }
+          if (el.tagName == "LINK") {
+            if (el.getAttribute("type") == "text/css") {
+              console.log("css", el.getAttribute("href"))
+            }
+          }
+        };
+        var get_path = function (el) {
+          var path = '';
+          while(el != null) {
+            path = el.tagName + "." + path;
+            el = el.parentElement;
+          }
+          return path;
+        };
+        var els = document.getElementsByTagName("*");
+        for (var i = 0; i < els.length; ++i) {
+          var rect = els[i].getBoundingClientRect();
+          //console.log("element N" + i + " : " + rect.left + " " + rect.top + " " + rect.width + " " + rect.height + " - " + els[i].tagName);
+          //console.log("path: " + get_path(els[i]));
+          console.log((rect.width + rect.height) + "	" + (rect.width - rect.height) + "	" +  get_path(els[i]) + " " + els[i].className);
+          
+          foo(els[i]);
+        }
+    } else {
 
-	console.log('call_func');
-	console.log(params);
+    	console.log('NOPE');
+    }
+	return {data: 'OK'};        
 }
 
-chrome.extension.onMessage.addListener(function(request){
 
+
+chrome.extension.onMessage.addListener(function extensionOnMessage(request)
+{
 	console.log('onMessage');
 	console.log(request);
 	if(request.msg === 'CALLFUNC'){
-		call_func(request.params);
+		var result = call_func(request.params);
+		chrome.extension.sendMessage({msg: 'FROMCONTENT', data: result});
 	}
+	chrome.extension.onMessage.removeListener(extensionOnMessage);
 });

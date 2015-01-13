@@ -16,9 +16,14 @@ chrome.browserAction.onClicked.addListener(function(tab) {
 });
 
 
+console.log('EXECUTING bacground.js');
+
 chrome.extension.onMessage.addListener(function(request){
 
-    console.log(request);
+    console.log("chrome.extension.onMessage.addListener" + request);
+
+
+    //chrome.windows.get(0, object getInfo, function callback)
 
     if(request.msg === 'SOMETHING'){
 		chrome.tabs.executeScript(null, {file: "content_script.js"}, function(){
@@ -27,9 +32,24 @@ chrome.extension.onMessage.addListener(function(request){
     			chrome.tabs.sendMessage(tabs[0].id, {action: "SendIt", msg: 'CALLFUNC', params: {data: request.data}}, function(response) {});
     		});
 	 	});
+ 	} else if (request.msg === 'FROMCONTENT'){
+ 		if (glbalObj.callback){
+ 			console.log('FROMCONTENT has callback');
+ 			glbalObj.callback(request);
+
+ 		}
+
  	}
 
 });
+
+var glbalObj = {
+	someFunc: function(params){
+		return {data: 'global DATA'}; 
+
+	},
+	callback: 0
+};
 
 
 
