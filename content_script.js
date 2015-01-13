@@ -1,3 +1,22 @@
+
+function process_mvideo() {
+	var els = document.querySelectorAll('.product-tile.showcompare');
+	if (els.length > 0) {
+		console.log("" + els.length + " elements found")
+		for(var i = 0; i < els.length; ++i) {
+			els[i].className += ' red_border';
+			var price_el = els[i].querySelector('.product-price-current');
+			
+
+			var title_el = els[i].querySelector('.product-tile-title-link');
+			console.log('el: ' + i + " title: " + title_el.innerText +' price:' + price_el.innerText + " href:" + title_el.href);
+		}	
+	} else {
+		console.log("none found");
+	}
+}
+
+
 function call_func(params){
 	if (0) {
 		var foo = function(el) {
@@ -36,12 +55,13 @@ function call_func(params){
           foo(els[i]);
         }
     } else {
+    	var url = document.URL;
 
-    	console.log('NOPE');
+    	console.log('NOPE url:' + url);
+    	process_mvideo();
     }
 	return {data: 'OK'};        
 }
-
 
 
 chrome.extension.onMessage.addListener(function extensionOnMessage(request)
