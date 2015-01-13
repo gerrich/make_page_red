@@ -1,4 +1,35 @@
 
+function short_url(url) {
+	if (url.search('^\/')) {
+		return url;
+	}
+	return url.replace('^http:\/\/([^\/ ]+)\/', '');
+}
+function check_common_prefix(a,b) {
+	var i = 0;
+	for (; i < a.length && i < b.length; ++i) {
+		if (a.charAt(i)!=b.charAt(i)) break;
+	}
+	for (var j = i; j < a.length; ++j) {
+		if (a.charAt(j) == '\/') return false;
+	}
+	for (var j = i; j < b.length; ++j) {
+		if (b.charAt(j) == '\/') return false;
+	}
+	return true;
+}
+function detect_pager() {
+	var main_url = short_url(document.URL);
+	var els = document.querySelectorAll('a');
+	for(var i = 0; i < els.length; ++i) {
+		var url = short_url(els[i].href);
+		// check common prefix contains all slashes% '/'
+		if(check_common_prefix(url, main_url)) {
+			console.log('pager: ' + els[i].href);
+		}
+	}
+}
+
 function process_mvideo() {
 	var els = document.querySelectorAll('.product-tile.showcompare');
 	if (els.length > 0) {
@@ -58,6 +89,7 @@ function call_func(params){
     	var url = document.URL;
 
     	console.log('NOPE url:' + url);
+    	detect_pager();
     	process_mvideo();
     }
 	return {data: 'OK'};        
