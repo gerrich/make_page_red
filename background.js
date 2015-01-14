@@ -22,7 +22,6 @@ chrome.extension.onMessage.addListener(function(request){
 
     console.log("chrome.extension.onMessage.addListener" + request);
 
-
     //chrome.windows.get(0, object getInfo, function callback)
 
     if(request.msg === 'SOMETHING'){
@@ -30,7 +29,7 @@ chrome.extension.onMessage.addListener(function(request){
 			chrome.tabs.executeScript(null, {file: "content_script.js"}, function(){
 		 		console.log('Script executed ');
 		 		chrome.tabs.query({active: true, currentWindow: true}, function(tabs){
-	    			chrome.tabs.sendMessage(tabs[0].id, {action: "SendIt", msg: 'CALLFUNC', params: {data: request.data}}, function(response) {});
+	    			chrome.tabs.sendMessage(tabs[0].id, {action: "SendIt", msg: 'CALLFUNC', params: {method: request.method, data: request.data}}, function(response) {});
 	    		});
 		 	});
 		});
@@ -38,11 +37,8 @@ chrome.extension.onMessage.addListener(function(request){
  		if (glbalObj.callback){
  			console.log('FROMCONTENT has callback');
  			glbalObj.callback(request);
-
  		}
-
  	}
-
 });
 
 var glbalObj = {

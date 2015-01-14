@@ -135,44 +135,94 @@ function process_google() {
 	}
 }
 
-function call_func(params){
-	if (0) {
-		var foo = function(el) {
-          if (el.tagName == "IMG") {
-            var src = el.getAttribute("data-original");
-            if (src != null) {
-              console.log("got image: " + src);
-            }// else {
-            //  src = el.getAttribute("src");
-            //  if (src != null) {
-             //   console.log("got image: " + src);
-            //  }
-           // }     
-          }
-          if (el.tagName == "LINK") {
-            if (el.getAttribute("type") == "text/css") {
-              console.log("css", el.getAttribute("href"))
-            }
-          }
-        };
-        var get_path = function (el) {
-          var path = '';
-          while(el != null) {
-            path = el.tagName + "." + path;
-            el = el.parentElement;
-          }
-          return path;
-        };
-        var els = document.getElementsByTagName("*");
-        for (var i = 0; i < els.length; ++i) {
-          var rect = els[i].getBoundingClientRect();
-          //console.log("element N" + i + " : " + rect.left + " " + rect.top + " " + rect.width + " " + rect.height + " - " + els[i].tagName);
-          //console.log("path: " + get_path(els[i]));
-          console.log((rect.width + rect.height) + "	" + (rect.width - rect.height) + "	" +  get_path(els[i]) + " " + els[i].className);
-          
-          foo(els[i]);
+function get_el_description(el, depth) {
+	if (depth == 0) {
+		return el.nodeName;
+	}
+	var description = el.nodeName;
+	description += '(';
+	for (var i = 0; i < el.childNodes.length; ++i) {
+		var child = el.childNodes[i];
+		description += '+' + get_el_description(child, depth - 1);
+	}
+	description += ')';
+	return description;
+}
+function auto_action() {
+	var foo = function(el) {
+      if (el.tagName == "IMG") {
+        var src = el.getAttribute("data-original");
+        if (src != null) {
+          console.log("got image: " + src);
+        }// else {
+        //  src = el.getAttribute("src");
+        //  if (src != null) {
+         //   console.log("got image: " + src);
+        //  }
+       // }     
+      }
+      if (el.tagName == "LINK") {
+        if (el.getAttribute("type") == "text/css") {
+          console.log("css", el.getAttribute("href"))
         }
-    } else {
+      }
+    };
+    var get_path = function (el) {
+      var path = '';
+      while(el != null) {
+        path = el.tagName + "." + path;
+        el = el.parentElement;
+      }
+      return path;
+    };
+    var el_groups = {};
+    var els = document.getElementsByTagName("*");
+    for (var i = 0; i < els.length; ++i) {
+      var rect = els[i].getBoundingClientRect();
+      //console.log("element N" + i + " : " + rect.left + " " + rect.top + " " + rect.width + " " + rect.height + " - " + els[i].tagName);
+      //console.log("path: " + get_path(els[i]));
+      console.log((rect.width + rect.height) + "	" + (rect.width - rect.height) + "	" +  get_path(els[i]) + " " + els[i].className + ' ' + get_el_description(els[i], 3));
+      var class_name = get_path(els[i]) + " :: " + get_el_description(els[i], 3);
+      if (!(class_name in el_groups)) { el_groups[class_name] = {mass:0, els:[]}; }
+      el_groups[class_name].mass += (rect.width + rect.height);
+      el_groups[class_name].els.push(els[i]);
+
+      //foo(els[i]);
+    }
+    console.log('DBG 1');
+    var el_group_list = [];
+    for (var key in el_groups) {
+    	console.log('DBG 2.1');
+    	if (el_groups[key].els.length < 2) { continue; }
+    	console.log('DBG 2.2');
+    	el_group_list.push(el_groups[key]);
+    	console.log('DBG 2.3');
+    }
+    console.log('DBG 3');
+    el_group_list.sort(function(a,b){return b.mass - a.mass;});
+console.log('DBG 4 -> ' + el_group_list.length);
+    for (var i = 0; i < 6 && i < el_group_list.length; ++i) {
+    	console.log('DBG 5.1');
+    	var group = el_group_list[i];
+    	console.log('DBG 5.2');
+    	console.log('group_id: ' + i + ' size: '+ group.els.length + ' mass:' + group.mass);
+    	console.log('DBG 5.3');
+		try {
+	    	for (var j = 0; j < group.els.length; ++j) {
+	    		group.els[j].className += ' red_border_' + i;
+	    	}
+    	} catch(err) {
+    		console.log(err);
+    	}
+    }
+}
+
+
+function call_func(params){
+	console.log('call_func: ' + JSON.stringify(params));
+	if (params.method == 'auto_action') {
+		auto_action();
+    } else if (params.method == 'custom_action'){
     	var url = document.URL;
 
     	console.log('NOPE url:' + url);
@@ -188,6 +238,8 @@ function call_func(params){
     	} else if (/^(https?:\/\/)?(www\.)?google\.[a-z]+/i.test(url)) {
     		process_google();
     	}
+    } else {
+    	console.log('Unregistered method name');
     }
 	return {data: 'OK'};        
 }

@@ -8,6 +8,10 @@ document.addEventListener('DOMContentLoaded', function() {
 	if (test_btn) {
 		test_btn.addEventListener('click', test);
 	}
+	var auto_btn = $$$('#auto_btn')[0];
+	if (auto_btn) {
+		auto_btn.addEventListener('click', on_auto_click);
+	}
 });
 
 function appendHTML(params){
@@ -26,5 +30,9 @@ function test(event){
 	debug_div.innerHTML += '<br>FROM GLOBAL: ' + chrome.extension.getBackgroundPage().glbalObj.someFunc({test: '1231231'});
 
 
-	chrome.extension.sendMessage({msg: 'SOMETHING', data: inp.value});
+	chrome.extension.sendMessage({msg: 'SOMETHING', method: 'custom_action', data: inp.value});
+}
+
+function on_auto_click(event) {
+	chrome.extension.sendMessage({msg: 'SOMETHING', method: 'auto_action', data: null});
 }

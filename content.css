@@ -1,3 +1,26 @@
 .red_border {
 	border: red 1px solid;
 }
+.red_border_0 {
+	border: red 1px solid;
+}
+.red_border_1 {
+	border: red 1px dotted;
+}
+.red_border_2 {
+	border: red 1px dashed;
+}
+.red_border_3 {
+	border: blue 1px solid;
+}
+.red_border_4 {
+	border: blue 1px dotted;
+}
+.red_border_5 {
+	border: blue 1px dashed;
+}
+
+button.hit_btn {
+	background-color: red;
+	text-decoration: bold;
+}

@@ -1,16 +1,21 @@
 <html>
 <head>
+	<link rel="stylesheet" href="http://yui.yahooapis.com/pure/0.5.0/pure-min.css">
 	<script src="popup.js"></script>
 	<style>
 		body {width: 500px; height: 400px;}
-		#debug_div {display: block; border: #999 1px dotted;}
+		#debug_div {display: block; border: #999 1px do;}
 	</style>
 </head>
 <body>
-     <input type="text" id="debug_inp">
-     <button id="test_btn">TEST</button>
-     <div id="debug_div">
+	<fieldset class="pure-form" style="margin:10px">
+ 		<input type="text" id="debug_inp">
+ 		<button id="test_btn" class="pure-button pure-button-active">Сдалть скучно</button>
+ 		<button id="auto_btn" class="pure-button pure-button-primary">Жги напалмом!</button>
+	</fieldset>
 
-     </div>
+    <div id="debug_div">
+
+    </div>
 </body>
 </html>
