@@ -148,6 +148,14 @@ function get_el_description(el, depth) {
 	description += ')';
 	return description;
 }
+function get_path(el) {
+  var path = '';
+  while(el != null) {
+    path = el.tagName + "." + path;
+    el = el.parentElement;
+  }
+  return path;
+};
 function auto_action() {
 	var foo = function(el) {
       if (el.tagName == "IMG") {
@@ -167,14 +175,7 @@ function auto_action() {
         }
       }
     };
-    var get_path = function (el) {
-      var path = '';
-      while(el != null) {
-        path = el.tagName + "." + path;
-        el = el.parentElement;
-      }
-      return path;
-    };
+
     var el_groups = {};
     var els = document.getElementsByTagName("*");
     for (var i = 0; i < els.length; ++i) {
@@ -189,24 +190,38 @@ function auto_action() {
 
       //foo(els[i]);
     }
-    console.log('DBG 1');
+
     var el_group_list = [];
     for (var key in el_groups) {
-    	console.log('DBG 2.1');
     	if (el_groups[key].els.length < 2) { continue; }
-    	console.log('DBG 2.2');
+    	update_group(el_groups[key]);
+    	console.log("path: " + el_groups[key].path);
     	el_group_list.push(el_groups[key]);
-    	console.log('DBG 2.3');
     }
-    console.log('DBG 3');
-    el_group_list.sort(function(a,b){return b.mass - a.mass;});
-console.log('DBG 4 -> ' + el_group_list.length);
+
+    el_group_list.sort(function(a,b){return b.path.localeCompare(a.path);});
+
+    for (var i = 1; i < el_group_list.length;) {
+    	if (el_group_list[i-1].path == el_group_list[i].path) {
+    		console.log("combine 1.1");
+    		var new_els = merge_node_list(el_group_list[i-1].els, el_group_list[i].els);
+    		console.log("combine 1.2");
+    		el_group_list[i-1].els = new_els;
+    		el_group_list[i-1].mass = Math.max(el_group_list[i-1].mass, el_group_list[i].mass);
+    		el_group_list.splice(i, 1);
+    	} else { ++i; }
+    }
+
+    for (var i in el_group_list) {
+    	el_group_list[i].surface = calc_group_surface(el_group_list[i].els);
+    	console.log('surface: ' + el_group_list[i].surface);
+    }
+
+    el_group_list.sort(function(a,b){return b.surface - a.surface;});
+
     for (var i = 0; i < 6 && i < el_group_list.length; ++i) {
-    	console.log('DBG 5.1');
     	var group = el_group_list[i];
-    	console.log('DBG 5.2');
-    	console.log('group_id: ' + i + ' size: '+ group.els.length + ' mass:' + group.mass);
-    	console.log('DBG 5.3');
+    	console.log('group_id: ' + i + ' size: '+ group.els.length + ' mass:' + group.mass + ' surface: ' + group.surface);
 		try {
 	    	for (var j = 0; j < group.els.length; ++j) {
 	    		group.els[j].className += ' red_border_' + i;
@@ -217,6 +232,89 @@ console.log('DBG 4 -> ' + el_group_list.length);
     }
 }
 
+function update_group(group) {
+	console.log("dbg 1");
+	var node_list = group.els;
+	var is_collision = false;
+	var steps_up = 0;
+	for(;;++steps_up) {
+			console.log("dbg 2.1");
+		var parent_list = [];
+		for (var j = 0; j < node_list.length; ++j) {
+			console.log("dbg 2.2.1");
+			parent_list.push(node_list[j].parentNode);
+			if (parent_list.length > 1 && parent_list[parent_list.length - 1] == parent_list[parent_list.length - 2]) {
+				is_collision = true;
+			}
+		}
+		if (is_collision) {
+			break;
+		}
+		node_list = parent_list;
+	}
+	group.els = node_list;
+	group.path = get_path(node_list[0]);
+	// TODO:
+	// set new group path
+	// set new description
+	// set new mass
+}
+
+// combine groups with same elements
+function merge_node_list(a, b) {
+	var i = 0;
+	var j = 0;
+	var c = [];
+	console.log('merge 1 ' + a.length + ' ' + b.length);
+	for (; i < a.length && j < b.length;) {
+			console.log('merge 2.1 ' + i + " " + j );
+		var pos = a[i].compareDocumentPosition(b[j]);
+		if (pos & 2) {
+			c.push(b[j]);
+			++j;
+		} else if (pos & 4) {
+			c.push(a[i]);
+			++i;
+		} else {
+			c.push(a[i]);
+			++i;
+			++j;
+		}
+	}
+	console.log('merge 3.1');
+	for(; i < a.length; ++i) {
+		console.log('merge 4.1 ' + i);
+		c.push(a[i]);
+	}
+	for(; j < b.length; ++j) {
+		console.log('merge 4.2 ' + i);
+		c.push(b[j]);
+	}
+	return c;
+}
+
+function calc_group_surface(els) {
+	var sum = 0;
+	console.log("param 1");
+	//var mass = 0;
+	for (var i in els) {
+		var rect = els[i].getBoundingClientRect();
+		sum += rect.width * rect.height;
+		//mass += rect.width + rect.height;
+	}
+	return sum;
+}
+
+// select best group
+
+/*
+elements of best group:
+has image
+has link
+text covers less then 50%
+
+group -> step up until number of nodes decresed
+*/
 
 function call_func(params){
 	console.log('call_func: ' + JSON.stringify(params));

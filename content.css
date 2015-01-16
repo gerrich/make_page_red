@@ -19,8 +19,3 @@
 .red_border_5 {
 	border: blue 1px dashed;
 }
-
-button.hit_btn {
-	background-color: red;
-	text-decoration: bold;
-}
