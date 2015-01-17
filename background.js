@@ -51,5 +51,15 @@ var glbalObj = {
 
 
 chrome.commands.onCommand.addListener(function(command) {
-        console.log('Command:', command);
-      });
+	console.log('Command:', command);
+
+    chrome.tabs.insertCSS(null, {file: "content.css"}, function(){
+		chrome.tabs.executeScript(null, {file: "content_script.js"}, function(){
+	 		console.log('Script executed ');
+	 		chrome.tabs.query({active: true, currentWindow: true}, function(tabs){
+    			chrome.tabs.sendMessage(tabs[0].id, {action: "SendIt", msg: 'CALLFUNC', params: {method: command, data: null}}, function(response) {});
+    		});
+	 	});
+	});
+});
+

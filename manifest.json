@@ -22,6 +22,9 @@
         "linux": "Ctrl+Shift+Y"
       },
       "description": "autoparse huge blocks"
+    },
+    "take_selection": {
+      "description": "take selection"
     }
   },
   "manifest_version": 2

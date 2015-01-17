@@ -156,6 +156,24 @@ function get_path(el) {
   }
   return path;
 };
+function get_rel_depth(el, el_list) {
+	for (var i in el_list) {
+		if (el.isSameNode(el_list[i])) {
+			return 0;
+		}
+		var pos = el.compareDocumentPosition(el_list[i]);
+		console.log('pos: ' + pos);
+		if (pos & 8) {
+			depth = 0;
+			while(!el.isSameNode(el_list[i])) {
+				el = el.parentNode;
+				++depth;
+			}
+			return depth;
+		}
+	}
+	return -1;
+}
 function auto_action() {
 	var foo = function(el) {
       if (el.tagName == "IMG") {
@@ -216,6 +234,36 @@ function auto_action() {
     	el_group_list[i].surface = calc_group_surface(el_group_list[i].els);
     	console.log('surface: ' + el_group_list[i].surface);
     }
+
+	var sel = take_selection();
+	if (sel != null) {
+		var good_groups = {};
+		for (var i in el_group_list) {
+			var rel_depth = get_rel_depth(sel, el_group_list[i].els);
+			if (rel_depth >=0) {
+				console.log("rel: " + rel_depth);
+				good_groups[rel_depth] = el_group_list[i];
+			}
+		}
+		console.log("@@@ 3");
+		var keys = Object.keys(good_groups);
+		console.log("@@@ 4: " + keys);
+		if (keys.length > 0) {
+			console.log("@@@ 5");
+			var min_key = Math.min.apply(Math, keys);
+			console.log("@@@ 6: " + min_key);
+			var group = good_groups[min_key];
+			try {
+		    	for (var j = 0; j < group.els.length; ++j) {
+		    		group.els[j].className += ' red_border';
+		    	}
+	    	} catch(err) {
+	    		console.log(err);
+	    	}
+		}
+
+		return;
+	}
 
     el_group_list.sort(function(a,b){return b.surface - a.surface;});
 
@@ -316,6 +364,33 @@ text covers less then 50%
 group -> step up until number of nodes decresed
 */
 
+function up_tag(el) {
+	if(typeof el.tagName === 'undefined') {
+		return el.parentNode;
+	}
+	return el;
+}
+function take_selection() {
+	var sel = window.getSelection();
+	
+	if (sel.rangeCount > 0) {
+		var range = sel.getRangeAt(0); //(i);
+		if (range.collapsed) {
+			console.log("take_selection... COLLAPSED");
+			return null;
+		}
+		console.log("take_selection..." + range.toString());
+		console.log("CAC: " + range.commonAncestorContainer.nodeName + " -> " + up_tag(range.commonAncestorContainer).nodeName);
+		up_tag(range.commonAncestorContainer).className += ' red_border';
+		up_tag(range.startContainer).className += ' red_border_4';
+		up_tag(range.endContainer).className += ' red_border_5';
+		return up_tag(range.commonAncestorContainer);
+	} else {
+		console.log("take_selection... NONE");
+		return null;
+	}	
+}
+
 function call_func(params){
 	console.log('call_func: ' + JSON.stringify(params));
 	if (params.method == 'auto_action') {
@@ -336,6 +411,8 @@ function call_func(params){
     	} else if (/^(https?:\/\/)?(www\.)?google\.[a-z]+/i.test(url)) {
     		process_google();
     	}
+    } else if (params.method == "take_selection") {
+    	take_selection();
     } else {
     	console.log('Unregistered method name');
     }
