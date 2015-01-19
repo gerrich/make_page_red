@@ -19,3 +19,12 @@
 .red_border_5 {
 	border: blue 1px dashed;
 }
+
+.right_mark {
+	position: absolute;
+	left: 0;
+    top: 0;
+
+	background-color: red;
+	color: white;
+}

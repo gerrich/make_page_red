@@ -174,6 +174,37 @@ function get_rel_depth(el, el_list) {
 	}
 	return -1;
 }
+function make_features(el_group) {
+	
+
+	var sum_h = 0;
+	var sum_h2 = 0;
+	var sum_w = 0;
+	var sum_w2 = 0;
+	var min_h = 1e9;
+	var max_h = 0;
+	var min_w = 1e9;
+	var max_w = 0;
+	for (var i in el_group.els) {
+		var el = el_group.els[i];
+		var rect = el.getBoundingClientRect();
+		sum_h += rect.height;
+		sum_w += rect.width;
+		sum_h2 += rect.height * rect.height;
+		sum_w2 += rect.width * rect.width;
+		min_h = Math.min(min_h, rect.height);
+		max_h = Math.max(max_h, rect.height);
+		min_w = Math.min(min_w, rect.width);
+		max_w = Math.max(max_w, rect.width);
+	}
+	var _n = 1.0 / el_group.els.length;
+	return [el_group.mass, el_group.surface, el_group.els.length,
+		min_h, max_h, min_w, max_w,
+		sum_h*_n, sum_w*_n,
+		sum_h2*_n - sum_h*sum_h*_n*_n,
+		sum_w2*_n - sum_w*sum_w*_n*_n
+	];
+}
 function auto_action() {
 	var foo = function(el) {
       if (el.tagName == "IMG") {
@@ -213,7 +244,6 @@ function auto_action() {
     for (var key in el_groups) {
     	if (el_groups[key].els.length < 2) { continue; }
     	update_group(el_groups[key]);
-    	console.log("path: " + el_groups[key].path);
     	el_group_list.push(el_groups[key]);
     }
 
@@ -221,9 +251,7 @@ function auto_action() {
 
     for (var i = 1; i < el_group_list.length;) {
     	if (el_group_list[i-1].path == el_group_list[i].path) {
-    		console.log("combine 1.1");
     		var new_els = merge_node_list(el_group_list[i-1].els, el_group_list[i].els);
-    		console.log("combine 1.2");
     		el_group_list[i-1].els = new_els;
     		el_group_list[i-1].mass = Math.max(el_group_list[i-1].mass, el_group_list[i].mass);
     		el_group_list.splice(i, 1);
@@ -237,31 +265,35 @@ function auto_action() {
 
 	var sel = take_selection();
 	if (sel != null) {
-		var good_groups = {};
+		var report = {url: document.URL, groups:[]};
+		var good_ids = [];
 		for (var i in el_group_list) {
 			var rel_depth = get_rel_depth(sel, el_group_list[i].els);
 			if (rel_depth >=0) {
-				console.log("rel: " + rel_depth);
-				good_groups[rel_depth] = el_group_list[i];
+				good_ids.push(i);
 			}
+			var features = make_features(el_group_list[i]);
+			features.push(0);
+			report.groups.push(features);
 		}
-		console.log("@@@ 3");
-		var keys = Object.keys(good_groups);
-		console.log("@@@ 4: " + keys);
-		if (keys.length > 0) {
-			console.log("@@@ 5");
-			var min_key = Math.min.apply(Math, keys);
-			console.log("@@@ 6: " + min_key);
-			var group = good_groups[min_key];
+
+		var id = global_counter.make_red++;
+		if (good_ids.length > 0) {
+			var min_key = Math.min.apply(Math, good_ids);
+			var features = report.groups[min_key];
+			features[features.length - 1] = 1;
+			var group = el_group_list[min_key];
 			try {
 		    	for (var j = 0; j < group.els.length; ++j) {
-		    		group.els[j].className += ' red_border';
+		    		make_red(group.els[j], id);
 		    	}
 	    	} catch(err) {
 	    		console.log(err);
 	    	}
 		}
 
+		var report_data = JSON.stringify(report);
+		test_request(report_data);
 		return;
 	}
 
@@ -370,7 +402,19 @@ function up_tag(el) {
 	}
 	return el;
 }
-function take_selection() {
+
+function make_red(el, id) {
+	el.className += ' red_border';
+	 
+	if (id == null) { return; }
+	var span = document.createElement("div");
+	var text = document.createTextNode("#" + id);
+	span.appendChild(text);
+	span.className = 'right_mark';
+	el.appendChild(span);
+}
+
+function take_selection(id) {
 	var sel = window.getSelection();
 	
 	if (sel.rangeCount > 0) {
@@ -381,9 +425,9 @@ function take_selection() {
 		}
 		console.log("take_selection..." + range.toString());
 		console.log("CAC: " + range.commonAncestorContainer.nodeName + " -> " + up_tag(range.commonAncestorContainer).nodeName);
-		up_tag(range.commonAncestorContainer).className += ' red_border';
-		up_tag(range.startContainer).className += ' red_border_4';
-		up_tag(range.endContainer).className += ' red_border_5';
+		make_red(up_tag(range.commonAncestorContainer), id);
+		//up_tag(range.startContainer).className += ' red_border_4';
+		//up_tag(range.endContainer).className += ' red_border_5';
 		return up_tag(range.commonAncestorContainer);
 	} else {
 		console.log("take_selection... NONE");
@@ -391,6 +435,47 @@ function take_selection() {
 	}	
 }
 
+function test_request(text) {
+	console.log('send request...');
+	chrome.runtime.sendMessage({
+		    method: 'POST',
+		    action: 'xhttp',
+		    url: 'http://localhost:8000/',
+		    data: text
+		}, function(responseText) {
+	    	console.log('response' + responseText);
+		}
+	);
+
+	/*
+	var xhr = new XMLHttpRequest();
+	xhr.open("POST", "http://localhost:8000/", true);
+	xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+	xhr.onreadystatechange = function() {
+	  if (xhr.readyState == 4) {
+	    // WARNING! Might be evaluating an evil script!
+	    //var resp = eval("(" + xhr.responseText + ")");
+	    //...
+	    console.log('response: ' + xhr.responseText);
+	  }
+	}
+	xhr.send(text);
+	*/
+}
+function test_write() {
+	chrome.fileSystem.getDisplayPath(fileEntry, function(path) {
+    	console.log(path)
+  	});
+	chrome.fileSystem.chooseEntry({type: 'saveFile'}, function(writableFileEntry) {
+	    writableFileEntry.createWriter(function(writer) {
+	      writer.onerror = errorHandler;
+	      writer.onwriteend = function(e) {
+	        console.log('write complete');
+	      };
+	      writer.write(new Blob(['1234567890'], {type: 'text/plain'}));
+	    }, errorHandler);
+	});
+}
 function call_func(params){
 	console.log('call_func: ' + JSON.stringify(params));
 	if (params.method == 'auto_action') {
@@ -412,13 +497,19 @@ function call_func(params){
     		process_google();
     	}
     } else if (params.method == "take_selection") {
-    	take_selection();
+    	take_selection('S');	
+    } else if (params.method == 'test_write'){
+    	test_request("HELLO WORLD!");
     } else {
     	console.log('Unregistered method name');
     }
 	return {data: 'OK'};        
 }
 
+// TODO: make persistent storage
+var global_counter = {
+	'make_red': 0
+};
 
 chrome.extension.onMessage.addListener(function extensionOnMessage(request)
 {
