@@ -32,6 +32,9 @@
     },
     "test_write": {
       "description": "test write"
+    },
+    "test_crawler": {
+      "description": "test crawler"
     }
   },
   "manifest_version": 2

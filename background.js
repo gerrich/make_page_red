@@ -63,6 +63,18 @@ chrome.runtime.onMessage.addListener(function(request, sender, callback) {
     }
 });
 
+function test_crawler() {
+	chrome.tabs.query({'active': true}, function(tabs) {
+		console.log('dbg 1.1 ' + tabs[0].id);
+	  	chrome.tabs.update(tabs[0].id, {url: 'http://yandex.ru'}, function(){
+	  		console.log('tab updated');
+	  	});
+	  	//chrome.tabs.executeScript(tabs[0].id, 'console.log("dododod");');
+	  	console.log('dbg 1.2');
+	});
+	//someOtherFunction();
+}
+
 var glbalObj = {
 	someFunc: function(params){
 		return {data: 'global DATA'}; 
@@ -75,6 +87,12 @@ var glbalObj = {
 chrome.commands.onCommand.addListener(function(command) {
 	console.log('Command:', command);
 
+	if (command == 'test_crawler') {
+		console.log("DBG 1");
+		test_crawler();
+		console.log("DBG 2");
+		return;
+	}
     chrome.tabs.insertCSS(null, {file: "content.css"}, function(){
 		chrome.tabs.executeScript(null, {file: "content_script.js"}, function(){
 	 		console.log('Script executed ');

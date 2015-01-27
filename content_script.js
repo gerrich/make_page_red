@@ -46,6 +46,32 @@ function process_mvideo() {
 	}
 }
 
+var ion_rule = {
+'selector': 'li.catalog_item',
+'name': 'product',
+'expected': 'many',
+'sub_rules':[
+	{
+		'selector': 'span.price',
+		'name': 'price',
+		'expected': 'one',
+		'type': 'text'
+	},
+	{
+		'selector': 'a.catalog_item_link',
+		'name': 'link',
+		'type': 'link',
+		'expected': 'one'
+	}
+]
+};
+
+function process_generic(rule_set) {
+	for (var key in rule_set) {
+		var rule = rule_set[key];
+		if 
+	}
+}
 function process_ion() {
 	console.log('process_ion');
 	var els = document.querySelectorAll('li.catalog_item');  
@@ -205,6 +231,21 @@ function make_features(el_group) {
 		sum_w2*_n - sum_w*sum_w*_n*_n
 	];
 }
+
+function iterate_elements(action) {
+	var pairs = [[document.body, '']];
+	for(; pairs.length > 0;) {
+		var pair = pairs.pop();
+		action(pair[0], pair[1]);
+		var child_list = pair[0].childNodes;
+		for (var i in child_list) {
+			var tag_name = pair[0].nodeName;
+			if (typeof tag_name == 'undefined') continue;
+			pairs.push([child_list[i], pair[1] + "." + tag_name]);
+		}
+	}
+}
+
 function auto_action() {
 	var foo = function(el) {
       if (el.tagName == "IMG") {
@@ -224,8 +265,23 @@ function auto_action() {
         }
       }
     };
-
-    var el_groups = {};
+	
+	var el_groups = {};
+    iterate_elements(function visit_action(el, path){
+      console.log('visit ' + path);
+      if (typeof el.getBoundingClientRect == 'undefined') {return;}
+      var rect = el.getBoundingClientRect();
+      console.log('visit 2');
+      //console.log("element N" + i + " : " + rect.left + " " + rect.top + " " + rect.width + " " + rect.height + " - " + els[i].tagName);
+      //console.log("path: " + get_path(els[i]));
+      console.log((rect.width + rect.height) + "	" + (rect.width - rect.height) + "	" +  get_path(el) + " " + el.className + ' ' + get_el_description(el, 3));
+      var class_name = get_path(el) + " :: " + get_el_description(el, 3);
+      if (!(class_name in el_groups)) { el_groups[class_name] = {mass:0, els:[]}; }
+      el_groups[class_name].mass += (rect.width + rect.height);
+      el_groups[class_name].els.push(el);
+    });
+    
+    /*
     var els = document.getElementsByTagName("*");
     for (var i = 0; i < els.length; ++i) {
       var rect = els[i].getBoundingClientRect();
@@ -236,9 +292,9 @@ function auto_action() {
       if (!(class_name in el_groups)) { el_groups[class_name] = {mass:0, els:[]}; }
       el_groups[class_name].mass += (rect.width + rect.height);
       el_groups[class_name].els.push(els[i]);
-
       //foo(els[i]);
     }
+    */
 
     var el_group_list = [];
     for (var key in el_groups) {
@@ -297,7 +353,29 @@ function auto_action() {
 		return;
 	}
 
+	//var urls= [url1, "ya.ru"];
+	
+
+
     el_group_list.sort(function(a,b){return b.surface - a.surface;});
+    //el_group_list = function(p1){asdasd}();
+   	
+   	tmp=[];
+   	for (var i in el_group_list) {
+   		var group = el_group_list[i];
+   		var is_bad = false;
+   		for (var j in group.els) {
+   			if (group.els[j].innerText.length == 0) {
+   				is_bad = true;
+   				break;
+   			}
+   		}
+   		if (!is_bad) {
+   			tmp.push(group);
+   		}
+   	}
+   	el_group_list = tmp;
+
 
     for (var i = 0; i < 6 && i < el_group_list.length; ++i) {
     	var group = el_group_list[i];
@@ -476,6 +554,7 @@ function test_write() {
 	    }, errorHandler);
 	});
 }
+
 function call_func(params){
 	console.log('call_func: ' + JSON.stringify(params));
 	if (params.method == 'auto_action') {
@@ -497,7 +576,13 @@ function call_func(params){
     		process_google();
     	}
     } else if (params.method == "take_selection") {
-    	take_selection('S');	
+    	//take_selection('S');	
+    	var els = document.getElementsByTagName("*");
+    	for(var i in els){
+    		if(/product/i.test(els[i].className)){
+    			els[i].className += ' red_border';
+    		} 
+    	}
     } else if (params.method == 'test_write'){
     	test_request("HELLO WORLD!");
     } else {
